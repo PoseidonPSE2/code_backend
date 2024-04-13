@@ -1,0 +1,25 @@
+// Get Refill Events
+curl http://localhost:8080/refill_events
+
+// Get Refill Event with id
+curl http://localhost:8080/refill_events/1
+
+// Post Refill Event
+curl -X POST \
+  http://localhost:8080/refill_events \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "id": "4",
+    "timestamp": "2024-04-13T12:00:00Z",
+    "milliliter": 750,
+    "user_id": "1"
+}'
+
+// Get Refill Events for user id
+curl http://localhost:8080/user_events/1
+
+// Get consumed water by used id
+curl http://localhost:8080/user_events_sum/1
+
+
+
