@@ -1,23 +1,48 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 )
 
 func main() {
-	router := gin.Default()
+	var urlExample = "postgres://postgres:pw@localhost:5432/poseidon"
+	conn, err := pgx.Connect(context.Background(), urlExample)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Close(context.Background())
 
-	router.GET("/refill_events", getRefillEvents)
-	router.GET("/refill_events/:id", getRefillEventByID)
-	router.POST("/refill_events", postRefillEvent)
+	var id string
+	var first_name string
+	var last_name string
+	var timestamp string
 
-	router.GET("/user_events/:user_id", getUserRefillEvents)
-	router.GET("/user_events_sum/:user_id", getUserConsumedWater)
+	err = conn.QueryRow(context.Background(), "select id, first_name, last_name from users").Scan(&id, &first_name, &last_name)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+		os.Exit(1)
+	}
 
-	router.Run("localhost:8080")
+	fmt.Println(id, first_name, last_name, timestamp)
+
+	// router := gin.Default()
+
+	// router.GET("/refill_events", getRefillEvents)
+	// router.GET("/refill_events/:id", getRefillEventByID)
+	// router.POST("/refill_events", postRefillEvent)
+
+	// router.GET("/user_events/:user_id", getUserRefillEvents)
+	// router.GET("/user_events_sum/:user_id", getUserConsumedWater)
+
+	// router.Run("localhost:8080")
 }
 
 type refill_event struct {
