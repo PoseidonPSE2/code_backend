@@ -1,9 +1,23 @@
-create database poseidon encoding 'UTF8';
+-- Check if the database exists, and if not, create it
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'poseidon') THEN
+        CREATE DATABASE poseidon
+            WITH 
+            OWNER = postgres
+            ENCODING = 'UTF8'
+            CONNECTION LIMIT = -1;
+    END IF;
+END $$;
 
--- Use Database
+-- Connect to the newly created or existing database
 \c poseidon;
 
-CREATE TABLE station (
+-- Drop tables if they exist
+DROP TABLE IF EXISTS refill_event, "user", station;
+
+-- Create station table if it does not exist
+CREATE TABLE IF NOT EXISTS station (
     id          SERIAL PRIMARY KEY,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     latitude    DOUBLE PRECISION CHECK (latitude >= -90 AND latitude <= 90),
@@ -13,14 +27,16 @@ CREATE TABLE station (
     open_times  TEXT
 );
 
-CREATE TABLE "user" (
+-- Create user table if it does not exist
+CREATE TABLE IF NOT EXISTS "user" (
     id          SERIAL PRIMARY KEY,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     first_name  TEXT,
     last_name   TEXT
 );
 
-CREATE TABLE refill_event (
+-- Create refill_event table if it does not exist
+CREATE TABLE IF NOT EXISTS refill_event (
     id          SERIAL PRIMARY KEY,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     milliliter  NUMERIC,
@@ -28,7 +44,7 @@ CREATE TABLE refill_event (
     station_id  INT REFERENCES station (id)
 );
 
--- Show Tables in Postgres 
+-- Show Tables in Postgres
 \dt; 
 
 -- Generate test data for the user table
