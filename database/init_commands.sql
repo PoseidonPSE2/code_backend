@@ -14,9 +14,9 @@ END $$;
 \c poseidon;
 
 -- Drop tables if they exist
-DROP TABLE IF EXISTS refill_event, "user", station;
+DROP TABLE IF EXISTS refill_event, users, station;
 
--- Create station table if it does not exist
+-- Create station table with Active column
 CREATE TABLE IF NOT EXISTS station (
     id          SERIAL PRIMARY KEY,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -24,23 +24,24 @@ CREATE TABLE IF NOT EXISTS station (
     longitude   DOUBLE PRECISION CHECK (longitude >= -180 AND longitude <= 180),
     title       TEXT,
     description TEXT,
-    open_times  TEXT
+    open_times  TEXT,
+    active      BOOLEAN DEFAULT TRUE
 );
 
--- Create user table if it does not exist
-CREATE TABLE IF NOT EXISTS "user" (
+-- Create user table
+CREATE TABLE IF NOT EXISTS users (
     id          SERIAL PRIMARY KEY,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     first_name  TEXT,
     last_name   TEXT
 );
 
--- Create refill_event table if it does not exist
+-- Create refill_event table
 CREATE TABLE IF NOT EXISTS refill_event (
     id          SERIAL PRIMARY KEY,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     milliliter  NUMERIC,
-    user_id     INT REFERENCES "user" (id),
+    user_id     INT REFERENCES users (id),
     station_id  INT REFERENCES station (id)
 );
 
@@ -48,7 +49,7 @@ CREATE TABLE IF NOT EXISTS refill_event (
 \dt; 
 
 -- Generate test data for the user table
-INSERT INTO "user" (first_name, last_name)
+INSERT INTO users (first_name, last_name)
 VALUES
     ('John', 'Doe'),
     ('Jane', 'Smith'),
@@ -62,6 +63,11 @@ VALUES
     (49.4447, 7.7693, 'Station 3', 'Description for Station 3', 'Mon-Fri: 7:30am-7pm, Sat: 8am-4pm');
 
 -- Generate test data for the refill_event table (run multiple times for it to work)
+WITH numbers AS (
+    SELECT *
+    FROM generate_series(1, 30)
+)
+
 INSERT INTO refill_event (created_at, milliliter, user_id, station_id)
 SELECT
     NOW() - INTERVAL '1' DAY * (random() * 30) AS created_at,
@@ -72,6 +78,6 @@ SELECT
         WHEN 3 THEN 500
         ELSE 200
     END AS milliliter,
-    (SELECT id FROM "user" OFFSET floor(RANDOM() * (SELECT COUNT(*) FROM "user")) LIMIT 1) user_id,
-    (SELECT id FROM station OFFSET floor(RANDOM() * (SELECT COUNT(*) FROM station)) LIMIT 1) station_id
-FROM generate_series(1, 5) s;
+    (SELECT id FROM users ORDER BY generate_series * RANDOM() LIMIT 1) user_id,
+    (SELECT id FROM station ORDER BY generate_series * RANDOM() LIMIT 1) station_id
+FROM numbers;
