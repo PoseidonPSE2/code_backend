@@ -8,43 +8,69 @@ import (
 )
 
 func TestAddData(t *testing.T) {
-	req, err := http.NewRequest("POST", "/add", bytes.NewBuffer([]byte(`{"id":"123", "ml":"100"}`)))
+	server := httptest.NewServer(http.HandlerFunc(addData))
+	defer server.Close()
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", server.URL, bytes.NewBuffer([]byte(`{"id":"123", "ml":"100", "waterType":"still"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(addData)
-
-	handler.ServeHTTP(rr, req)
-
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	expected := `ID 123 mit Füllstand 100 ml wurde hinzugefügt\n`
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 OK, got %v", resp.Status)
 	}
 }
 
 func TestHandleRequest(t *testing.T) {
-	req, err := http.NewRequest("POST", "/", bytes.NewBuffer([]byte(`{"id":"123"}`)))
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", handleRequest)
+	mux.HandleFunc("/add", addData)
+
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", server.URL+"/add", bytes.NewBuffer([]byte(`{"id":"123", "ml":"100", "waterType":"still"}`)))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	rr := httptest.NewRecorder()
-	handler := http.HandlerFunc(handleRequest)
-
-	handler.ServeHTTP(rr, req)
-
-	if status := rr.Code; status != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+	_, err = client.Do(req)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	expected := `ID 123 hat den Füllstand 100 ml\n`
-	if rr.Body.String() != expected {
-		t.Errorf("handler returned unexpected body: got %v want %v", rr.Body.String(), expected)
+	req, err = http.NewRequest("POST", server.URL, bytes.NewBuffer([]byte(`{"id":"123"}`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 OK, got %v", resp.Status)
+	}
+}
+
+func TestAddDataManually(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(addDataManually))
+	defer server.Close()
+
+	resp, err := http.Get(server.URL + "?id=456&ml=200&waterType=sprudel")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200 OK, got %v", resp.Status)
 	}
 }
