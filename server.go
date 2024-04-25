@@ -7,21 +7,21 @@ import (
 	"net/http"
 )
 
-type Data struct {
+type data struct {
 	ID        string `json:"id"`
 	Ml        string `json:"ml,omitempty"`
 	WaterType string `json:"waterType,omitempty"`
 }
 
-type DatabaseEntry struct {
+type databaseEntry struct {
 	Ml        string
 	WaterType string
 }
 
-var db = make(map[string]DatabaseEntry)
+var db = make(map[string]databaseEntry)
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	var data Data
+	var data data
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		log.Printf("Fehler beim Dekodieren der Anfrage: %v", err)
@@ -42,7 +42,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func addData(w http.ResponseWriter, r *http.Request) {
-	var data Data
+	var data data
 	err := json.NewDecoder(r.Body).Decode(&data)
 	if err != nil {
 		log.Printf("Fehler beim Dekodieren der Anfrage: %v", err)
@@ -50,7 +50,7 @@ func addData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db[data.ID] = DatabaseEntry{Ml: data.Ml, WaterType: data.WaterType}
+	db[data.ID] = databaseEntry{Ml: data.Ml, WaterType: data.WaterType}
 	response := fmt.Sprintf("ID %s mit Füllstand %s ml und Wasserart %s wurde hinzugefügt\n", data.ID, data.Ml, data.WaterType)
 	log.Printf("Daten hinzugefügt: %s", response)
 	fmt.Fprint(w, response)
@@ -66,7 +66,7 @@ func addDataManually(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db[id] = DatabaseEntry{Ml: ml, WaterType: waterType}
+	db[id] = databaseEntry{Ml: ml, WaterType: waterType}
 	response := fmt.Sprintf("ID %s mit Füllstand %s ml und Wasserart %s wurde hinzugefügt\n", id, ml, waterType)
 	log.Printf("Daten hinzugefügt: %s", response)
 	fmt.Fprint(w, response)
