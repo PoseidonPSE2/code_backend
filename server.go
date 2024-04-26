@@ -21,22 +21,34 @@ type databaseEntry struct {
 var db = make(map[string]databaseEntry)
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	var data data
-	err := json.NewDecoder(r.Body).Decode(&data)
+	var request_data data
+	err := json.NewDecoder(r.Body).Decode(&request_data)
 	if err != nil {
 		log.Printf("Fehler beim Dekodieren der Anfrage: %v", err)
 		http.Error(w, "Ungültige Anfrage", http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("Anfrage erhalten für ID: %s", data.ID)
+	log.Printf("Anfrage erhalten für ID: %s", request_data.ID)
 
-	if entry, ok := db[data.ID]; ok {
-		response := fmt.Sprintf("ID %s hat den Füllstand %s ml und Wasserart %s\n", data.ID, entry.Ml, entry.WaterType)
+	if entry, ok := db[request_data.ID]; ok {
+		var dataResponse = data{
+			ID:        request_data.ID,
+			Ml:        entry.Ml,
+			WaterType: entry.WaterType,
+		}
+
+		response, err := json.Marshal(dataResponse)
+		if err != nil {
+			log.Printf("Fehler beim Marshaling der Antwort: %v", err)
+			http.Error(w, "Interner Serverfehler", http.StatusInternalServerError)
+			return
+		}
+
 		log.Printf("Antwort gesendet: %s", response)
-		fmt.Fprint(w, response)
+		fmt.Fprintf(w, "%s\n", response)
 	} else {
-		log.Printf("ID nicht gefunden: %s", data.ID)
+		log.Printf("ID nicht gefunden: %s", request_data.ID)
 		http.Error(w, "ID nicht gefunden", http.StatusNotFound)
 	}
 }
@@ -72,7 +84,13 @@ func addDataManually(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, response)
 }
 
+func addInitialData() {
+	db["13:8E:BD:0C"] = databaseEntry{Ml: "500", WaterType: "still"}
+	db["13:E0:0B:35"] = databaseEntry{Ml: "100", WaterType: "sprudel"}
+}
+
 func main() {
+	addInitialData()
 	http.HandleFunc("/", handleRequest)
 	http.HandleFunc("/add", addData)
 	http.HandleFunc("/addManually", addDataManually)
