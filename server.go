@@ -88,12 +88,35 @@ func addInitialData() {
 	db["13:8E:BD:0C"] = databaseEntry{Ml: "500", WaterType: "still"}
 	db["13:E0:0B:35"] = databaseEntry{Ml: "100", WaterType: "sprudel"}
 }
+func getAllEntries(w http.ResponseWriter, r *http.Request) {
+
+	var allEntries []data
+
+	for id, entry := range db {
+		allEntries = append(allEntries, data{
+			ID:        id,
+			Ml:        entry.Ml,
+			WaterType: entry.WaterType,
+		})
+	}
+
+	response, err := json.Marshal(allEntries)
+	if err != nil {
+		log.Printf("Fehler beim Marshaling der Antwort: %v", err)
+		http.Error(w, "Interner Serverfehler", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Antwort gesendet: %s", response)
+	fmt.Fprintf(w, "%s\n", response)
+}
 
 func main() {
 	addInitialData()
 	http.HandleFunc("/", handleRequest)
 	http.HandleFunc("/add", addData)
 	http.HandleFunc("/addManually", addDataManually)
+	http.HandleFunc("/getAllEntries", getAllEntries)
 	log.Println("Server läuft und hört auf Port 8080...")
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
