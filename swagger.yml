@@ -1,0 +1,86 @@
+swagger: "2.0"
+info:
+  description: "This is a simple API for water bottle management"
+  version: "1.0.0"
+  title: "Water Bottle API"
+host: "localhost:8080"
+basePath: "/"
+schemes:
+- "http"
+paths:
+  /:
+    get:
+      summary: "Retrieves data by ID"
+      parameters:
+      - name: "id"
+        in: "query"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/data"
+        400:
+          description: "Invalid request"
+        404:
+          description: "ID not found"
+  /add:
+    post:
+      summary: "Adds new data"
+      parameters:
+      - in: "body"
+        name: "body"
+        required: true
+        schema:
+          $ref: "#/definitions/data"
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Invalid request"
+  /addManually:
+    post:
+      summary: "Adds new data manually"
+      parameters:
+      - name: "id"
+        in: "query"
+        required: true
+        type: "string"
+      - name: "ml"
+        in: "query"
+        required: true
+        type: "string"
+      - name: "waterType"
+        in: "query"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success"
+        400:
+          description: "Invalid request"
+  /getAllEntries:
+    get:
+      summary: "Retrieves all data entries"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/data"
+        500:
+          description: "Internal server error"
+definitions:
+  data:
+    type: "object"
+    required:
+      - id
+    properties:
+      id:
+        type: "string"
+      ml:
+        type: "string"
+      waterType:
+        type: "string"
